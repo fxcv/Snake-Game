@@ -36,6 +36,7 @@ public class Game{
 
 
         frame.addKeyListener(new GameKeyListener());
+        frame.setResizable(false);
         frame.getContentPane().add(BorderLayout.CENTER, panel);
         frame.setSize(600, 600);
         frame.setLocationRelativeTo(null);
@@ -104,7 +105,7 @@ public class Game{
     }
 
     private void refreshMap(Graphics g){
-        g.setColor(Color.WHITE);
+        g.setColor(Color.GRAY);
         g.fillRect(0, 0, frame.getContentPane().getWidth(), frame.getContentPane().getHeight());
         g.setColor(Color.GREEN);
     }
@@ -149,6 +150,7 @@ public class Game{
                 bodyPartsY[i] = oldCordinatesY[i-1];
                 g.fillOval(bodyPartsX[i], bodyPartsY[i], UNIT_SIZE, UNIT_SIZE);
             }
+            g.setColor(Color.RED);
             g.fillOval(appleX, appleY, UNIT_SIZE, UNIT_SIZE);
         }
     }
