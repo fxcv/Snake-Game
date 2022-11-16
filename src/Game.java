@@ -7,18 +7,27 @@ import java.util.Random;
 public class Game{
     private JFrame frame;
     private JPanel panel;
-    private boolean isAlive = false;
-    private int x = 300;
-    private int y = 300;
+    private boolean isAlive;
+    private int[] bodyPartsX;
+    private int[] bodyPartsY;
     private final int UNIT_SIZE = 25;
     private boolean left = false;
     private boolean right = false;
     private boolean up = true;
     private boolean down = false;
+    private int appleX;
+    private int appleY;
+    private int bodyParts;
+    private int[] appleSpawningsX;
+    private int[] appleSpawningsY;
+    private final Random random = new Random();
 
     public Game(){
         setUpGui();
-        startGame();
+        while(true){
+            startGame();
+            endGame();
+        }
     }
 
     private void setUpGui(){
@@ -35,15 +44,63 @@ public class Game{
     }
 
     private void startGame(){
+        setBodyParts();
+        setAppleSpawnings();
+        randomizeApple();
         isAlive = true;
         try{
             while(isAlive){
                 panel.repaint();
-                Thread.sleep(6);
+                isGameOver();
+                if(checkApple(bodyPartsX[0], bodyPartsY[0], appleX, appleY)){
+                    randomizeApple();
+                    addBodyParts();
+                }
+                Thread.sleep(200);
             }
         } catch(Exception ex){
             ex.printStackTrace();
         }
+    }
+
+    private void endGame(){
+
+    }
+
+    private void isGameOver(){
+        if(bodyPartsX[0] >= panel.getWidth() || bodyPartsY[0] >= panel.getHeight() || bodyPartsX[0] < 0 || bodyPartsY[0] < 0){
+            isAlive = false;
+        }
+        for(int i = 1; i<bodyParts; i++){
+            if(bodyPartsX[0] == bodyPartsX[i] && bodyPartsY[0] == bodyPartsY[i]){
+                isAlive = false;
+                break;
+            }
+        }
+    }
+
+    private void setBodyParts(){
+        bodyParts = 1;
+        bodyPartsX = new int[600];
+        bodyPartsY = new int[600];
+        bodyPartsX[0] = 300;
+        bodyPartsY[0] = 300;
+    }
+
+    private void setAppleSpawnings(){
+        appleSpawningsX = new int[600];
+        appleSpawningsY = new int[600];
+        for(int i = 0, j = 0; j<panel.getWidth() / 25; i+=25, j++){
+            appleSpawningsX[j] = i;
+        }
+        for(int i = 0, j = 0; j<panel.getHeight() / 25; i+=25, j++){
+            appleSpawningsY[j] = i;
+        }
+    }
+
+    private void randomizeApple(){
+        appleX = appleSpawningsX[random.nextInt(panel.getWidth() / 25)];
+        appleY = appleSpawningsY[random.nextInt(panel.getHeight() / 25)];
     }
 
     private void refreshMap(Graphics g){
@@ -52,61 +109,93 @@ public class Game{
         g.setColor(Color.GREEN);
     }
 
+    private void addBodyParts(){
+        ++bodyParts;
+        bodyPartsX[bodyParts-1] = bodyPartsX[bodyParts-2];
+        bodyPartsY[bodyParts-1] = bodyPartsY[bodyParts-2] + UNIT_SIZE;
+    }
+
     private boolean checkApple(int snakeX, int snakeY, int appleX, int appleY){
-        for(int i = 0; i<=25; i++){
-            if(snakeX == (appleX+UNIT_SIZE) && (snakeY == (appleY + i) || snakeY == (appleY - i))) return true;
-            if((snakeX + UNIT_SIZE) == appleX && (snakeY == (appleY + i) || snakeY == (appleY - i))) return true;
-            if(snakeY == (appleY+UNIT_SIZE) && (snakeX == (appleX + i) || snakeX == (appleX - i))) return true;
-            if((snakeY + UNIT_SIZE) == appleY && (snakeX == (appleX + i) || snakeX == (appleX - i))) return true;
-        }
+        if(snakeX==appleX && snakeY == appleY) return true;
         return false;
     }
 
     private class MyPanel extends JPanel{
-        private int appleX = 50;
-        private int appleY = 50;
-        private Random random = new Random();
-
+        private int[] oldCordinatesX = new int[600];
+        private int[] oldCordinatesY = new int[600];
         @Override
         public void paintComponent(Graphics g){
+            for(int i = 0; i<bodyParts; i++){
+                oldCordinatesX[i] = bodyPartsX[i];
+                oldCordinatesY[i] = bodyPartsY[i];
+            }
+            refreshMap(g);
             if(left){
-                refreshMap(g);
-                g.fillOval(--x, y, UNIT_SIZE, UNIT_SIZE);
-                g.fillOval(appleX, appleY, UNIT_SIZE, UNIT_SIZE);
+                bodyPartsX[0]-=25;
             }
             else if(right){
-                refreshMap(g);
-                g.fillOval(++x, y, UNIT_SIZE, UNIT_SIZE);
-                g.fillOval(appleX, appleY, UNIT_SIZE, UNIT_SIZE);
+                bodyPartsX[0]+=25;
             }
             else if(down){
-                refreshMap(g);
-                g.fillOval(x, ++y, UNIT_SIZE, UNIT_SIZE);
-                g.fillOval(appleX, appleY, UNIT_SIZE, UNIT_SIZE);
+                bodyPartsY[0]+=25;
             }
             else if(up){
-                refreshMap(g);
-                g.fillOval(x, --y, UNIT_SIZE, UNIT_SIZE);
-                g.fillOval(appleX, appleY, UNIT_SIZE, UNIT_SIZE);
+                bodyPartsY[0]-=25;
             }
+            g.fillOval(bodyPartsX[0], bodyPartsY[0], UNIT_SIZE, UNIT_SIZE);
 
-            if(checkApple(x, y, appleX, appleY)){
-                appleX = random.nextInt(this.getWidth());
-                appleY = random.nextInt(this.getHeight());
+            for(int i = 1;i<bodyParts; i++){
+                bodyPartsX[i] = oldCordinatesX[i-1];
+                bodyPartsY[i] = oldCordinatesY[i-1];
+                g.fillOval(bodyPartsX[i], bodyPartsY[i], UNIT_SIZE, UNIT_SIZE);
             }
+            g.fillOval(appleX, appleY, UNIT_SIZE, UNIT_SIZE);
         }
     }
 
     private class GameKeyListener implements KeyListener{
-        private boolean notStarted = true;
         @Override
         public void keyTyped(KeyEvent e) {
-            System.out.println("dziala");
             switch(e.getKeyChar()){
-                case 'w': up = true; down = false; right = false; left = false; break;
-                case 'a': up = false; down = false; right = false; left = true; break;
-                case 's': up = false; down = true; right = false; left = false; break;
-                case 'd': up = false; down = false; right = true; left = false;
+                case 'w':
+                    if(down==true && bodyParts>1){
+                        break;
+                    } else{
+                        up = true;
+                        down = false;
+                        right = false;
+                        left = false;
+                        break;
+                    }
+                case 'a':
+                    if(right==true && bodyParts>1){
+                        break;
+                    } else{
+                        up = false;
+                        down = false;
+                        right = false;
+                        left = true;
+                        break;
+                    }
+                case 's':
+                    if(up==true && bodyParts>1){
+                        break;
+                    } else{
+                        up = false;
+                        down = true;
+                        right = false;
+                        left = false;
+                        break;
+                    }
+                case 'd':
+                    if(left==true && bodyParts>1){
+                        break;
+                    } else{
+                        up = false;
+                        down = false;
+                        right = true;
+                        left = false;
+                    }
             }
         }
 
